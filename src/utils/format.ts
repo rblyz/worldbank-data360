@@ -11,11 +11,11 @@ export interface FormattedDataResult {
   count: number
   indicator?: string
   indicatorName?: string
-  area?: string | string[]
+  area?: string
   database?: string
   databaseName?: string
   meta: Record<string, unknown>
-  records: Array<{ period?: string; value: number }>
+  records: Array<{ period?: string; area?: string; value: number }>
 }
 
 export function formatDataResult(
@@ -23,6 +23,9 @@ export function formatDataResult(
   names?: { indicatorName?: string; databaseName?: string }
 ): FormattedDataResult {
   const first = result.records[0] as unknown as Record<string, unknown> | undefined
+
+  const areas = new Set(result.records.map(r => r.area).filter(Boolean))
+  const multiArea = areas.size > 1
 
   const meta: Record<string, unknown> = {}
   if (first) {
@@ -34,14 +37,20 @@ export function formatDataResult(
     }
   }
 
+  const records = result.records.map(r =>
+    multiArea
+      ? { period: r.period, area: r.area, value: r.value }
+      : { period: r.period, value: r.value }
+  )
+
   return {
     count: result.count,
     indicator: first?.['indicator'] as string | undefined,
     indicatorName: names?.indicatorName,
-    area: first?.['area'] as string | undefined,
+    area: multiArea ? undefined : (first?.['area'] as string | undefined),
     database: first?.['DATABASE_ID'] as string | undefined,
     databaseName: names?.databaseName,
     meta,
-    records: result.records.map(r => ({ period: r.period, value: r.value }))
+    records
   }
 }

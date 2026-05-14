@@ -3,14 +3,14 @@ import assert from 'node:assert/strict'
 import { formatDataResult } from '../src/utils/format.js'
 import type { DataResult } from '../src/types/params.js'
 
-function makeResult(records: Array<{ period: string; value: number; extra?: Record<string, unknown> }>): DataResult {
+function makeResult(records: Array<{ period: string; value: number; area?: string; extra?: Record<string, unknown> }>): DataResult {
   return {
     count: records.length,
     records: records.map(r => ({
       value: r.value,
       period: r.period,
       indicator: 'WB_WDI_SP_DYN_CBRT_IN',
-      area: 'POL',
+      area: r.area ?? 'POL',
       DATABASE_ID: 'WB_WDI',
       ...r.extra
     }))
@@ -27,17 +27,41 @@ describe('formatDataResult()', () => {
     assert.deepEqual(result.records.map(r => r.period), ['2000', '2005', '2010'])
   })
 
-  test('hoists indicator, area, database to top level', () => {
+  test('single area — hoists area to top level, records have no area field', () => {
+    const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
+    assert.equal(result.area, 'POL')
+    assert.equal('area' in result.records[0]!, false)
+  })
+
+  test('multiple areas — area omitted from top level, included in each record', () => {
+    const result = formatDataResult(makeResult([
+      { period: '2023', value: 7.4, area: 'POL' },
+      { period: '2023', value: 5.1, area: 'DEU' }
+    ]))
+    assert.equal(result.area, undefined)
+    assert.equal(result.records[0]!.area, 'POL')
+    assert.equal(result.records[1]!.area, 'DEU')
+  })
+
+  test('hoists indicator and database to top level', () => {
     const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
     assert.equal(result.indicator, 'WB_WDI_SP_DYN_CBRT_IN')
-    assert.equal(result.area, 'POL')
     assert.equal(result.database, 'WB_WDI')
   })
 
-  test('records contain only period and value', () => {
+  test('single area records contain only period and value', () => {
     const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
     const keys = Object.keys(result.records[0]!)
     assert.deepEqual(keys.sort(), ['period', 'value'])
+  })
+
+  test('multi area records contain period, area, and value', () => {
+    const result = formatDataResult(makeResult([
+      { period: '2023', value: 7.4, area: 'POL' },
+      { period: '2023', value: 5.1, area: 'DEU' }
+    ]))
+    const keys = Object.keys(result.records[0]!)
+    assert.deepEqual(keys.sort(), ['area', 'period', 'value'])
   })
 
   test('meta contains noise fields from first record', () => {
