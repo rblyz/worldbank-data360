@@ -3,6 +3,12 @@ import { WorldBankClient } from './client.js'
 import { parseFlags } from './utils/flags.js'
 import { formatDataResult } from './utils/format.js'
 import { fetchIndicatorMeta } from './endpoints/metadata.js'
+import { getHint } from './hints.js'
+
+function hint(tag: string) {
+  const h = getHint(tag)
+  if (h) process.stderr.write(`\n💡 ${h}\n`)
+}
 
 const client = new WorldBankClient()
 const [cmd, ...rest] = process.argv.slice(2)
@@ -80,7 +86,10 @@ async function main() {
       const key = FIELD_LABELS[dim.field_name] ?? dim.field_name.toLowerCase()
       if (dim.field_name === 'TIME_PERIOD') {
         const sorted = [...values].sort()
-        result['years'] = `${sorted[0]}–${sorted[sorted.length - 1]}`
+        const isContiguous = sorted.every((y, i) => i === 0 || Number(y) === Number(sorted[i - 1]) + 1)
+        result['years'] = isContiguous
+          ? `${sorted[0]}–${sorted[sorted.length - 1]}`
+          : sorted
       } else if (dim.field_name === 'REF_AREA') {
         result['areas'] = values.length
       } else {
@@ -88,6 +97,7 @@ async function main() {
       }
     }
     out(result)
+    hint(Array.isArray(result['years']) ? 'after-info-sparse' : 'after-info')
     return
   }
 
@@ -99,6 +109,7 @@ async function main() {
     if (flags['database']) builder.database(flags['database'])
     builder.top(flags['top'] ? Number(flags['top']) : 10)
     out(await builder.fetchItems())
+    hint('after-search')
     return
   }
 
@@ -141,7 +152,15 @@ async function main() {
         wasTruncated ? { top, total: result.count } : undefined
       )
       out(formatted)
-      if (result.records.length === 0) process.exit(1)
+      if (result.records.length === 0) {
+        hint('after-empty')
+        process.exit(1)
+      } else if (wasTruncated) {
+        hint('after-truncated')
+      } else {
+        const areas = flags['area']?.split(',') ?? []
+        hint(areas.length > 1 ? 'after-data-multi-area' : 'after-data-single-area')
+      }
     }
     return
   }
