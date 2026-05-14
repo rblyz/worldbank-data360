@@ -12,26 +12,27 @@
 
 <br/>
 
+![worldbank discover](worldbank-data360.png)
+
 ### [API Reference →](https://data360.worldbank.org/en/api#/)
 
 <br/>
 
 Access 12,000+ World Bank indicators — GDP, population, climate, health, education — from the terminal or your TypeScript code. No API key required.
 
-**Install and use as a CLI:**
+**Install and start exploring:**
 
 ```bash
 npm install -g worldbank-data360
-worldbank search "gdp per capita" --top 5 --database WB_WDI
-worldbank info WB_WDI_NY_GDP_PCAP_CD
-worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
-worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023 --format csv > gdp.csv
+worldbank discover
 ```
+
+`discover` prints a quick start guide with examples — search, fetch, CSV export, jq patterns.
 
 **Or run without installing:**
 
 ```bash
-npx worldbank-data360 search "gdp per capita" --top 5
+npx worldbank-data360 discover
 ```
 
 **Or use as a TypeScript SDK:**
