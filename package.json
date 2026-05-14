@@ -1,6 +1,6 @@
 {
   "name": "worldbank-data360",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "TypeScript SDK for World Bank Data360 API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,10 +24,30 @@
     "example": "tsx examples/gdp-by-country.ts",
     "test": "tsx --test tests/*.test.ts"
   },
-  "keywords": ["worldbank", "data360", "world-bank", "open-data", "sdk", "typescript", "api-client", "economics", "gdp", "development-indicators", "wdi", "imf", "statistics", "time-series", "countries", "cli"],
+  "keywords": [
+    "worldbank",
+    "data360",
+    "world-bank",
+    "open-data",
+    "sdk",
+    "typescript",
+    "api-client",
+    "economics",
+    "gdp",
+    "development-indicators",
+    "wdi",
+    "imf",
+    "statistics",
+    "time-series",
+    "countries",
+    "cli"
+  ],
   "author": "Ruslan Blyzniuk",
   "license": "MIT",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "devDependencies": {
     "@types/node": "^25.7.0",

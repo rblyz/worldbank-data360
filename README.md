@@ -1,18 +1,34 @@
-# worldbank
+<p align="center">
+  <h1 align="center">worldbank-data360</h1>
+  <p align="center">TypeScript SDK and CLI for the World Bank Data360 API</p>
+</p>
 
-TypeScript SDK and CLI for the [World Bank Data360 API](https://data360api.worldbank.org). Fluent interface, automatic pagination, AI-first design.
+<p align="center">
+  <a href="https://www.npmjs.com/package/worldbank-data360"><img src="https://img.shields.io/npm/v/worldbank-data360.svg" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/worldbank-data360"><img src="https://img.shields.io/npm/dw/worldbank-data360.svg" alt="weekly downloads" /></a>
+  <a href="https://github.com/worldbank/open-api-specs"><img src="https://img.shields.io/badge/API-Data360-blue" alt="API" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license" />
+</p>
 
-No API key required — the API is fully public.
+<br/>
+
+Access 12,000+ World Bank indicators — GDP, population, climate, health, education — from the terminal or your TypeScript code. No API key required.
+
+```bash
+npx worldbank-data360 search "co2 emissions per capita" --top 5
+npx worldbank-data360 info WB_WDI_NY_GDP_PCAP_CD
+npx worldbank-data360 data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
+```
+
+<br/>
 
 ## CLI
-
-The fastest way to explore World Bank data without writing code.
 
 ```bash
 # run without installing
 npx worldbank-data360 search "co2 emissions" --top 5
 
-# install globally for shorter commands
+# or install globally for shorter commands
 npm install -g worldbank-data360
 worldbank search "co2 emissions" --top 5
 ```
@@ -49,7 +65,7 @@ worldbank info WB_WDI_SP_DYN_LE00_IN
 }
 ```
 
-If `years` is a list instead of a range, the indicator is published only in specific years — request only those years in `--from`/`--to`.
+If `years` is a list instead of a range, the indicator is published only in specific years — use those exact years in `--from`/`--to`.
 
 **3. Fetch data**
 
@@ -77,7 +93,7 @@ worldbank data WB_WDI --indicator WB_WDI_SP_DYN_LE00_IN --area POL,DEU,USA --fro
 
 Multiple countries → records grouped by country code. Single country → flat array. Pipe to jq: `worldbank data ... | jq '.records.POL'`
 
-### All CLI commands
+### All commands
 
 | Command | Description |
 |---|---|
@@ -89,6 +105,8 @@ Multiple countries → records grouped by country code. Single country → flat 
 | `worldbank countries` | List all countries with ISO codes |
 
 Default result limit is 100 rows. Add `--all` to fetch everything.
+
+<br/>
 
 ## SDK
 
@@ -130,6 +148,8 @@ builder
 
 const result = await builder.fetch()
 ```
+
+Pagination is automatic — the API returns max 1000 records per call, the SDK handles `skip` internally.
 
 ### Search
 
@@ -203,6 +223,8 @@ try {
 }
 ```
 
+<br/>
+
 ## API endpoints
 
 | Method | Endpoint |
@@ -216,6 +238,8 @@ try {
 | `.countries()` | `GET /V2/country` (World Bank V2) |
 
 Both APIs are public — no authentication required.
+
+<br/>
 
 ## Data attribution
 
