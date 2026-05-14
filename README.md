@@ -9,10 +9,10 @@ No API key required — the API is fully public.
 The fastest way to explore World Bank data without writing code.
 
 ```bash
-# without installing
+# run without installing
 npx worldbank search "co2 emissions" --top 5
 
-# or install globally — then just `worldbank`
+# install globally for shorter commands
 npm install -g worldbank
 worldbank search "co2 emissions" --top 5
 ```
