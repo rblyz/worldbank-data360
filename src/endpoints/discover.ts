@@ -59,7 +59,6 @@ export async function discover(): Promise<DiscoverResult> {
 
   return {
     totalIndicators: raw['@odata.count'] ?? 0,
-    databases,
-    hint: "Use client.search('your topic').fetchItems() to find indicators, then client.data(databaseId).indicator(id).from('2000').to('2023').fetch()"
+    databases
   }
 }

@@ -121,7 +121,6 @@ export interface DatabaseInfo {
 export interface DiscoverResult {
   totalIndicators: number
   databases: DatabaseInfo[]
-  hint: string
 }
 
 export interface SearchQuery {

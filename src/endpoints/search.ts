@@ -21,7 +21,11 @@ export class SearchBuilder {
 
   search(term: string): this { this._params.search = term; return this }
   database(id: string): this { this._params.filter = `series_description/database_id eq '${id}'`; return this }
-  filter(expr: string): this { this._params.filter = expr; return this }
+  filter(expr: string): this {
+    if (this._params.filter) this._params.filter = `(${this._params.filter}) and (${expr})`
+    else this._params.filter = expr
+    return this
+  }
   select(fields: string): this { this._params.select = fields; return this }
   orderBy(expr: string): this { this._params.orderby = expr; return this }
   top(n: number): this { this._params.top = n; return this }

@@ -54,6 +54,7 @@ async function main() {
   if (!cmd || cmd === 'help' || cmd === '--help') {
     help()
     hint('general')
+    if (!cmd) process.exit(1)
     return
   }
 
@@ -72,7 +73,9 @@ async function main() {
   if (cmd === 'info') {
     const indicatorId = rest[0]
     if (!indicatorId || indicatorId.startsWith('--')) { console.error('Usage: worldbank info <INDICATOR_ID>'); process.exit(1) }
-    const databaseId = indicatorId.split('_').slice(0, 2).join('_')
+    const parts = indicatorId.split('_')
+    if (parts.length < 3) { console.error(`Invalid indicator ID: "${indicatorId}". Expected format: DB_NAME_INDICATOR (e.g. WB_WDI_SP_POP_TOTL)`); process.exit(1) }
+    const databaseId = parts.slice(0, 2).join('_')
     const [raw, meta] = await Promise.all([
       client.disaggregation(databaseId).indicator(indicatorId).fetch() as Promise<Array<{ field_name: string; label_name: string; field_value: string[] }>>,
       fetchIndicatorMeta(indicatorId)
