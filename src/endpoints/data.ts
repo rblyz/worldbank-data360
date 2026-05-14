@@ -7,6 +7,30 @@ type RawResponse = components['schemas']['DataResponse']
 
 const PAGE_SIZE = 1000
 
+type Fetcher = (skip: number) => Promise<RawResponse>
+
+export async function paginate(fetcher: Fetcher): Promise<DataResult> {
+  let skip = 0
+  let totalCount = 0
+  const allRecords: DataRecord[] = []
+
+  while (true) {
+    const raw = await fetcher(skip)
+    const page = raw.value ?? []
+
+    if (skip === 0) totalCount = raw.count ?? 0
+
+    for (const r of page) {
+      allRecords.push(normalizeDataRecord(r as Record<string, unknown>))
+    }
+
+    if (page.length < PAGE_SIZE || allRecords.length >= totalCount) break
+    skip += PAGE_SIZE
+  }
+
+  return { count: totalCount, records: allRecords }
+}
+
 export class DataQueryBuilder {
   private readonly _databaseId: string
   private _indicator?: string
@@ -68,27 +92,9 @@ export class DataQueryBuilder {
   }
 
   async fetch(): Promise<DataResult> {
-    let skip = 0
-    let totalCount = 0
-    const allRecords: DataRecord[] = []
-
-    while (true) {
-      const raw = await getJSON<RawResponse>(DATA360_BASE, '/data360/data', this.buildParams(skip))
-      const page = raw.value ?? []
-
-      if (skip === 0) {
-        totalCount = raw.count ?? 0
-      }
-
-      for (const r of page) {
-        allRecords.push(normalizeDataRecord(r as Record<string, unknown>))
-      }
-
-      if (page.length < PAGE_SIZE || allRecords.length >= totalCount) break
-      skip += PAGE_SIZE
-    }
-
-    return { count: totalCount, records: allRecords }
+    return paginate(skip =>
+      getJSON<RawResponse>(DATA360_BASE, '/data360/data', this.buildParams(skip))
+    )
   }
 
   explain(): ExplainResult {
