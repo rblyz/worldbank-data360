@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { WorldBankClient } from './client.js'
 import { parseFlags } from './utils/flags.js'
-import { formatDataResult, isSdmxDefault } from './utils/format.js'
+import { formatDataResult, formatAsCsv, isSdmxDefault } from './utils/format.js'
 import { fetchIndicatorMeta } from './endpoints/metadata.js'
 import { getHint } from './hints.js'
 
@@ -35,6 +35,7 @@ Commands:
                [--area POL,DEU,USA]
                [--from YEAR] [--to YEAR]
                [--top N] [--all]
+               [--format json|csv]
   explain <DB> --indicator <ID>        Preview query without fetching
                [--area POL,DEU] [--from YEAR] [--to YEAR]
   countries                            List all countries
@@ -155,7 +156,11 @@ async function main() {
         { indicator: flags['indicator'], area: flags['area'] },
         wasTruncated ? { top, total: result.count } : undefined
       )
-      out(formatted)
+      if (flags['format'] === 'csv') {
+        process.stdout.write(formatAsCsv(formatted) + '\n')
+      } else {
+        out(formatted)
+      }
       if (result.records.length === 0) {
         hint('after-empty')
         process.exit(1)

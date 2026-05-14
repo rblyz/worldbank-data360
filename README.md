@@ -25,6 +25,7 @@ npm install -g worldbank-data360
 worldbank search "gdp per capita" --top 5 --database WB_WDI
 worldbank info WB_WDI_NY_GDP_PCAP_CD
 worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
+worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023 --format csv > gdp.csv
 ```
 
 **Or run without installing:**
@@ -185,7 +186,34 @@ worldbank data WB_HCI --indicator WB_HCI_HCI --area FIN,SWE --from 2018 --to 202
 
 **Pagination is automatic** — the API caps at 1000 records per call. The SDK fetches all pages transparently. By default the CLI shows 100 rows — add `--all` to get everything, or `--top N` to set a custom limit.
 
-Pipe to jq: `worldbank data ... | jq '.records.POL'`
+**Export to CSV — open directly in Excel or Google Sheets:**
+
+```bash
+# multi-country → one row per country+year
+worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023 --format csv > gdp.csv
+```
+```
+area,period,value
+DEU,2010,40408.71
+POL,2010,12602.34
+USA,2010,48466.73
+...
+```
+
+```bash
+# indicators with sex/age breakdowns → each dimension becomes its own column
+worldbank data WB_HCI --indicator WB_HCI_HCI --area FIN,SWE --from 2018 --to 2020 --format csv > hci.csv
+```
+```
+area,period,value,SEX
+FIN,2018,0.814484,
+FIN,2018,0.786722,M
+FIN,2018,0.844708,F
+SWE,2018,0.80251,
+...
+```
+
+Pipe JSON to jq: `worldbank data ... | jq '.records.POL'`
 
 ### Other commands
 
@@ -206,7 +234,7 @@ The CLI shows contextual hints in stderr after each command — they don't pollu
 | `worldbank discover` | List all 100+ databases with indicator counts |
 | `worldbank search <query> [--top N] [--database ID]` | Search indicators by keyword |
 | `worldbank info <INDICATOR_ID>` | Show name, countries, year range, and dimensions |
-| `worldbank data <DB> --indicator <ID> [--area] [--from] [--to] [--top N] [--all]` | Fetch data |
+| `worldbank data <DB> --indicator <ID> [--area] [--from] [--to] [--top N] [--all] [--format json\|csv]` | Fetch data |
 | `worldbank explain <DB> --indicator <ID> [...]` | Preview query without fetching |
 | `worldbank countries` | List all countries with ISO codes |
 

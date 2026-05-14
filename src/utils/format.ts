@@ -22,6 +22,37 @@ export interface FormattedDataResult {
   records: Array<Record<string, unknown>> | Record<string, Array<Record<string, unknown>>>
 }
 
+export function formatAsCsv(formatted: FormattedDataResult): string {
+  const rows: Array<Record<string, unknown>> = []
+
+  if (Array.isArray(formatted.records)) {
+    for (const r of formatted.records) {
+      rows.push({ area: formatted.area, ...r })
+    }
+  } else {
+    for (const [area, areaRecords] of Object.entries(formatted.records)) {
+      for (const r of areaRecords) {
+        rows.push({ area, ...r })
+      }
+    }
+  }
+
+  if (rows.length === 0) return ''
+
+  const cols = Object.keys(rows[0]!)
+
+  const escape = (v: unknown) => {
+    const s = v === undefined || v === null ? '' : String(v)
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s
+  }
+
+  const lines = [cols.join(',')]
+  for (const row of rows) {
+    lines.push(cols.map(c => escape(row[c])).join(','))
+  }
+  return lines.join('\n')
+}
+
 export function formatDataResult(
   result: DataResult,
   names?: { indicatorName?: string; databaseName?: string },
