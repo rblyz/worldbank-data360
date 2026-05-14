@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 import { WorldBankClient } from './client.js'
 import { parseFlags } from './utils/flags.js'
-import { formatDataResult } from './utils/format.js'
+import { formatDataResult, isSdmxDefault } from './utils/format.js'
 import { fetchIndicatorMeta } from './endpoints/metadata.js'
 import { getHint } from './hints.js'
+
+const INFO_SKIP_FIELDS = new Set(['INDICATOR', 'FREQ', 'COMP_BREAKDOWN_1', 'COMP_BREAKDOWN_2', 'COMP_BREAKDOWN_3', 'UNIT_MEASURE', 'TIME_FORMAT', 'OBS_CONF', 'OBS_STATUS', 'DECIMALS', 'AGG_METHOD'])
+const INFO_FIELD_LABELS: Record<string, string> = {
+  SEX: 'sex', AGE: 'age', URBANISATION: 'urbanisation', REF_AREA: 'areas', TIME_PERIOD: 'years'
+}
 
 function hint(tag: string) {
   const h = getHint(tag)
@@ -67,11 +72,6 @@ async function main() {
     const indicatorId = rest[0]
     if (!indicatorId || indicatorId.startsWith('--')) { console.error('Usage: worldbank info <INDICATOR_ID>'); process.exit(1) }
     const databaseId = indicatorId.split('_').slice(0, 2).join('_')
-    const SKIP_FIELDS = new Set(['INDICATOR', 'FREQ', 'COMP_BREAKDOWN_1', 'COMP_BREAKDOWN_2', 'COMP_BREAKDOWN_3', 'UNIT_MEASURE', 'TIME_FORMAT', 'OBS_CONF', 'OBS_STATUS', 'DECIMALS', 'AGG_METHOD'])
-    const FIELD_LABELS: Record<string, string> = {
-      SEX: 'sex', AGE: 'age', URBANISATION: 'urbanisation', REF_AREA: 'areas', TIME_PERIOD: 'years'
-    }
-    const isSdmxDefault = (v: string) => v.startsWith('_')
     const [raw, meta] = await Promise.all([
       client.disaggregation(databaseId).indicator(indicatorId).fetch() as Promise<Array<{ field_name: string; label_name: string; field_value: string[] }>>,
       fetchIndicatorMeta(indicatorId)
@@ -80,12 +80,12 @@ async function main() {
     if (meta?.name) result['name'] = meta.name
     if (meta?.databaseName) result['database'] = meta.databaseName
     for (const dim of raw) {
-      if (SKIP_FIELDS.has(dim.field_name)) continue
+      if (INFO_SKIP_FIELDS.has(dim.field_name)) continue
       const values = dim.field_value.filter(v => !isSdmxDefault(v))
       if (values.length === 0) continue
-      const key = FIELD_LABELS[dim.field_name] ?? dim.field_name.toLowerCase()
+      const key = INFO_FIELD_LABELS[dim.field_name] ?? dim.field_name.toLowerCase()
       if (dim.field_name === 'TIME_PERIOD') {
-        const sorted = [...values].sort()
+        const sorted = [...values].sort((a, b) => Number(a) - Number(b))
         const isContiguous = sorted.every((y, i) => i === 0 || Number(y) === Number(sorted[i - 1]) + 1)
         result['years'] = isContiguous
           ? `${sorted[0]}–${sorted[sorted.length - 1]}`

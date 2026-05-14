@@ -4,7 +4,7 @@ function isUpperCase(key: string) {
   return key === key.toUpperCase()
 }
 
-function isSdmxDefault(v: unknown) {
+export function isSdmxDefault(v: unknown) {
   return typeof v === 'string' && v.startsWith('_')
 }
 
