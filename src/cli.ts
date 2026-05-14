@@ -48,7 +48,9 @@ async function main() {
   }
 
   if (cmd === 'countries') {
-    out(await client.countries().fetch())
+    const result = await client.countries().fetch()
+    const items = result.items.filter(c => c.region?.id !== 'NA')
+    out({ ...result, items })
     return
   }
 
@@ -71,6 +73,11 @@ async function main() {
     const flags = parseFlags(rest.slice(1))
     if (!flags['indicator']) { console.error('--indicator is required'); process.exit(1) }
 
+    if (flags['from'] && flags['to'] && flags['from'] > flags['to']) {
+      console.error(`Error: --from (${flags['from']}) must be ≤ --to (${flags['to']})`)
+      process.exit(1)
+    }
+
     const builder = client.data(databaseId).indicator(flags['indicator'])
     if (flags['area']) builder.area(flags['area'].split(','))
     if (flags['from']) builder.from(flags['from'])
@@ -89,7 +96,11 @@ async function main() {
         result.records = result.records.slice(0, top)
         process.stderr.write(`Note: showing ${top} of ${result.count} records. Use --all to fetch everything or --top N to set limit.\n`)
       }
-      out(formatDataResult(result, meta ? { indicatorName: meta.name, databaseName: meta.databaseName } : undefined))
+      out(formatDataResult(
+        result,
+        meta ? { indicatorName: meta.name, databaseName: meta.databaseName } : undefined,
+        { indicator: flags['indicator'], area: flags['area'] }
+      ))
     }
     return
   }

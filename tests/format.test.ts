@@ -97,19 +97,32 @@ describe('formatDataResult()', () => {
     assert.equal('TIME_FORMAT' in result.meta, false)
   })
 
-  test('meta keeps numeric 0 and boolean false', () => {
+  test('meta skips UNIT_MULT and LATEST_DATA always', () => {
     const result = formatDataResult(makeResult([{
       period: '2023',
       value: 7.4,
-      extra: { UNIT_MULT: 0, LATEST_DATA: false }
+      extra: { UNIT_MULT: 0, LATEST_DATA: false, OBS_STATUS: 'A' }
     }]))
-    assert.equal(result.meta['UNIT_MULT'], 0)
-    assert.equal(result.meta['LATEST_DATA'], false)
+    assert.equal('UNIT_MULT' in result.meta, false)
+    assert.equal('LATEST_DATA' in result.meta, false)
+    assert.equal(result.meta['OBS_STATUS'], 'A')
   })
 
-  test('empty records — returns empty array and no meta', () => {
-    const result = formatDataResult({ count: 0, records: [] })
+  test('empty records — returns warning with query context', () => {
+    const result = formatDataResult(
+      { count: 0, records: [] },
+      undefined,
+      { indicator: 'WB_WDI_NONEXISTENT', area: 'POL' }
+    )
     assert.equal(result.records.length, 0)
-    assert.deepEqual(result.meta, {})
+    assert.ok(typeof result.warning === 'string')
+    assert.ok(result.warning!.length > 0)
+    assert.equal(result.indicator, 'WB_WDI_NONEXISTENT')
+    assert.equal(result.area, 'POL')
+  })
+
+  test('non-empty records — no warning', () => {
+    const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
+    assert.equal(result.warning, undefined)
   })
 })

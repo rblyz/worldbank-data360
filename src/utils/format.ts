@@ -6,6 +6,7 @@ const NOISE_KEYS = new Set([
   'SEX', 'AGE', 'URBANISATION', 'COMP_BREAKDOWN_1', 'COMP_BREAKDOWN_2', 'COMP_BREAKDOWN_3',
   'UNIT_MEASURE', 'UNIT_MULT', 'OBS_STATUS', 'LATEST_DATA'
 ])
+const ALWAYS_SKIP = new Set(['UNIT_MULT', 'LATEST_DATA'])
 
 export interface FormattedDataResult {
   count: number
@@ -14,13 +15,15 @@ export interface FormattedDataResult {
   area?: string
   database?: string
   databaseName?: string
+  warning?: string
   meta: Record<string, unknown>
   records: Array<{ period?: string; area?: string; value: number }>
 }
 
 export function formatDataResult(
   result: DataResult,
-  names?: { indicatorName?: string; databaseName?: string }
+  names?: { indicatorName?: string; databaseName?: string },
+  query?: { indicator?: string; area?: string | string[] }
 ): FormattedDataResult {
   const first = result.records[0] as unknown as Record<string, unknown> | undefined
 
@@ -30,6 +33,7 @@ export function formatDataResult(
   const meta: Record<string, unknown> = {}
   if (first) {
     for (const key of NOISE_KEYS) {
+      if (ALWAYS_SKIP.has(key)) continue
       const v = first[key]
       if (v !== undefined && v !== null && v !== '' && !SDMX_DEFAULT.has(v as string)) {
         meta[key] = v
@@ -43,13 +47,21 @@ export function formatDataResult(
       : { period: r.period, value: r.value }
   )
 
+  const indicator = (first?.['indicator'] as string | undefined) ?? query?.indicator
+  const area = multiArea
+    ? undefined
+    : (first?.['area'] as string | undefined) ?? (Array.isArray(query?.area) ? query.area[0] : query?.area)
+
   return {
     count: result.count,
-    indicator: first?.['indicator'] as string | undefined,
+    indicator,
     indicatorName: names?.indicatorName,
-    area: multiArea ? undefined : (first?.['area'] as string | undefined),
+    area,
     database: first?.['DATABASE_ID'] as string | undefined,
     databaseName: names?.databaseName,
+    warning: result.records.length === 0
+      ? 'No data returned. Possible causes: invalid area code, indicator not available for this region, or date range out of bounds. Run "worldbank countries" to verify area codes.'
+      : undefined,
     meta,
     records
   }

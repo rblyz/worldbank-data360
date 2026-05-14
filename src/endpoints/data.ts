@@ -28,7 +28,12 @@ export async function paginate(fetcher: Fetcher): Promise<DataResult> {
     skip += PAGE_SIZE
   }
 
-  allRecords.sort((a, b) => (a.period ?? '') < (b.period ?? '') ? -1 : (a.period ?? '') > (b.period ?? '') ? 1 : 0)
+  allRecords.sort((a, b) => {
+    const pa = a.period ?? '', pb = b.period ?? ''
+    if (pa !== pb) return pa < pb ? -1 : 1
+    const aa = a.area ?? '', ab = b.area ?? ''
+    return aa < ab ? -1 : aa > ab ? 1 : 0
+  })
 
   return { count: totalCount, records: allRecords }
 }

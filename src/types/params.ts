@@ -107,12 +107,14 @@ export interface SearchResultItem {
 }
 
 export interface SearchResponse {
-  count: number
+  total: number
+  shown: number
   items: SearchResultItem[]
 }
 
 export interface DatabaseInfo {
   id: string
+  name?: string
   indicatorCount: number
 }
 

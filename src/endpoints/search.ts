@@ -42,18 +42,21 @@ export class SearchBuilder {
 
     const raw = await postJSON<RawSearchResponse>(DATA360_BASE, '/data360/searchv2', body)
 
-    const items: SearchResultItem[] = (raw.value ?? []).map(r => ({
-      id: r.series_description?.idno ?? '',
-      name: r.series_description?.name ?? '',
-      databaseId: r.series_description?.database_id ?? '',
-      score: r['@search.score'] ?? 0,
-      topics: (r.series_description?.topics ?? [])
-        .map(t => t.name ?? t.value ?? '')
-        .filter(Boolean)
-    }))
+    const items: SearchResultItem[] = (raw.value ?? [])
+      .map(r => ({
+        id: r.series_description?.idno ?? '',
+        name: r.series_description?.name ?? '',
+        databaseId: r.series_description?.database_id ?? '',
+        score: r['@search.score'] ?? 0,
+        topics: (r.series_description?.topics ?? [])
+          .map(t => t.name ?? t.value ?? '')
+          .filter(Boolean)
+      }))
+      .filter(item => item.id !== '')
 
     return {
-      count: raw['@odata.count'] ?? 0,
+      total: raw['@odata.count'] ?? 0,
+      shown: items.length,
       items
     }
   }

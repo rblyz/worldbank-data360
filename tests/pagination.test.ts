@@ -110,6 +110,22 @@ describe('paginate()', () => {
     assert.deepEqual(result.records.map(r => r.period), ['2005', '2010', '2020'])
   })
 
+  test('multi-area records sorted by period then area alphabetically', async () => {
+    const result = await paginate(async () => ({
+      count: 4,
+      value: [
+        { OBS_VALUE: '1', TIME_PERIOD: '2020', REF_AREA: 'USA' },
+        { OBS_VALUE: '2', TIME_PERIOD: '2020', REF_AREA: 'DEU' },
+        { OBS_VALUE: '3', TIME_PERIOD: '2021', REF_AREA: 'USA' },
+        { OBS_VALUE: '4', TIME_PERIOD: '2021', REF_AREA: 'DEU' }
+      ]
+    }))
+    assert.deepEqual(
+      result.records.map(r => `${r.period}/${r.area}`),
+      ['2020/DEU', '2020/USA', '2021/DEU', '2021/USA']
+    )
+  })
+
   test('3000 records — three fetcher calls', async () => {
     let calls = 0
     const result = await paginate(async (skip) => {
