@@ -28,6 +28,8 @@ export async function paginate(fetcher: Fetcher): Promise<DataResult> {
     skip += PAGE_SIZE
   }
 
+  allRecords.sort((a, b) => (a.period ?? '') < (b.period ?? '') ? -1 : (a.period ?? '') > (b.period ?? '') ? 1 : 0)
+
   return { count: totalCount, records: allRecords }
 }
 

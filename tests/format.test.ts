@@ -18,11 +18,11 @@ function makeResult(records: Array<{ period: string; value: number; extra?: Reco
 }
 
 describe('formatDataResult()', () => {
-  test('sorts records by period ascending', () => {
+  test('preserves record order (sorting is done by paginate)', () => {
     const result = formatDataResult(makeResult([
-      { period: '2010', value: 10 },
       { period: '2000', value: 9 },
-      { period: '2005', value: 8 }
+      { period: '2005', value: 8 },
+      { period: '2010', value: 10 }
     ]))
     assert.deepEqual(result.records.map(r => r.period), ['2000', '2005', '2010'])
   })

@@ -34,12 +34,6 @@ export function formatDataResult(
     }
   }
 
-  const sorted = [...result.records].sort((a, b) => {
-    const pa = a.period ?? ''
-    const pb = b.period ?? ''
-    return pa < pb ? -1 : pa > pb ? 1 : 0
-  })
-
   return {
     count: result.count,
     indicator: first?.['indicator'] as string | undefined,
@@ -48,6 +42,6 @@ export function formatDataResult(
     database: first?.['DATABASE_ID'] as string | undefined,
     databaseName: names?.databaseName,
     meta,
-    records: sorted.map(r => ({ period: r.period, value: r.value }))
+    records: result.records.map(r => ({ period: r.period, value: r.value }))
   }
 }

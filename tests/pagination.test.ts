@@ -98,6 +98,18 @@ describe('paginate()', () => {
     assert.equal((record as Record<string, unknown>)['OBS_STATUS'], 'A')
   })
 
+  test('records are sorted by period ascending', async () => {
+    const result = await paginate(async () => ({
+      count: 3,
+      value: [
+        { OBS_VALUE: '1', TIME_PERIOD: '2010' },
+        { OBS_VALUE: '2', TIME_PERIOD: '2005' },
+        { OBS_VALUE: '3', TIME_PERIOD: '2020' }
+      ]
+    }))
+    assert.deepEqual(result.records.map(r => r.period), ['2005', '2010', '2020'])
+  })
+
   test('3000 records — three fetcher calls', async () => {
     let calls = 0
     const result = await paginate(async (skip) => {
