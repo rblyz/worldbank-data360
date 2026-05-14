@@ -62,12 +62,36 @@ npm install -g worldbank-data360
 worldbank search "gdp per capita" --top 5
 ```
 
-### Step 1 — Discover what's available
-
-Not sure where to start? See all 100+ databases with indicator counts:
+### Step 1 — Start here
 
 ```bash
 worldbank discover
+```
+```
+worldbank-data360  —  12,938 indicators from the World Bank and partners
+
+QUICK START
+
+  1. Search for an indicator
+       worldbank search "gdp per capita" --top 5
+
+  2. Check what years and countries actually have data
+       worldbank info WB_WDI_NY_GDP_PCAP_CD
+
+  3. Fetch
+       worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
+
+  Filter one country from multi-country results with jq:
+       worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA | jq '.records.POL'
+
+  Export to CSV (opens in Excel / Google Sheets):
+       worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --format csv > gdp.csv
+```
+
+To get the full database list as JSON:
+
+```bash
+worldbank discover --databases
 ```
 ```json
 {

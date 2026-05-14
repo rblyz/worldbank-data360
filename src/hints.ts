@@ -6,7 +6,7 @@ interface Hint {
 const hints: Hint[] = [
   // after-search — юзер нашёл индикатор, следующий шаг
   { tag: 'after-search', text: 'Next: `worldbank info <ID>` — shows which countries and years actually have data before you fetch.' },
-  { tag: 'after-search', text: 'Top result not what you expected? Add --database to narrow: `worldbank search "..." --database WB_WDI`. Run `worldbank discover` to see all database IDs.' },
+  { tag: 'after-search', text: 'Top result not what you expected? Add --database to narrow: `worldbank search "..." --database WB_WDI`. Full database list: `worldbank discover --databases`.' },
   { tag: 'after-search', text: 'Indicator IDs encode the database: WB_WDI_SP_POP_TOTL → database WB_WDI. Use that as the first arg to `worldbank data`.' },
 
   // after-info — юзер видит параметры, готов к data
@@ -34,7 +34,7 @@ const hints: Hint[] = [
 
   // general — для help и пустого ввода
   { tag: 'general', text: 'Typical workflow: `worldbank search "topic"` → `worldbank info <ID>` → `worldbank data <DB> --indicator <ID> --area POL --from 2000 --to 2023`.' },
-  { tag: 'general', text: 'Not sure which database to use? `worldbank discover` lists all 100 databases with indicator counts.' },
+  { tag: 'general', text: 'Not sure which database to use? `worldbank discover` — or `worldbank discover --databases` for the full list as JSON.' },
   { tag: 'general', text: 'All output is JSON — pipe to jq: `worldbank data ... | jq \'.records\'`' },
 ]
 
