@@ -1,6 +1,6 @@
 {
   "name": "worldbank-data360",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "TypeScript SDK for World Bank Data360 API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
