@@ -4,7 +4,7 @@ CLI and TypeScript SDK for the World Bank Data360 API. Search 12,000+ indicators
 
 [![npm version](https://img.shields.io/npm/v/worldbank-data360.svg)](https://www.npmjs.com/package/worldbank-data360) [![weekly downloads](https://img.shields.io/npm/dw/worldbank-data360.svg)](https://www.npmjs.com/package/worldbank-data360) [![license](https://img.shields.io/badge/license-MIT-green)](https://github.com/rblyz/worldbank-data360?tab=MIT-1-ov-file#readme)
 
-![worldbank discover](docs/images/worldbank-data360.png)
+![worldbank discover](https://raw.githubusercontent.com/rblyz/worldbank-data360/main/docs/images/worldbank-data360.png)
 
 ## Install
 
