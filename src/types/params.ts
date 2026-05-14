@@ -103,7 +103,7 @@ export interface SearchResultItem {
   name: string
   databaseId: string
   score: number
-  topics: string[]
+  topics?: string[]
 }
 
 export interface SearchResponse {

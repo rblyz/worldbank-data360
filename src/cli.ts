@@ -18,6 +18,7 @@ worldbank CLI
 Commands:
   discover                              List all available databases
   search <query> [--top N]             Search indicators by keyword
+               [--database WB_WDI]
   data <DB> --indicator <ID>           Fetch data (default: --top 100)
                [--area POL,DEU,USA]
                [--from YEAR] [--to YEAR]
@@ -59,6 +60,7 @@ async function main() {
     if (!query || query.startsWith('--')) { console.error('Usage: worldbank search <query> [--top N]'); process.exit(1) }
     const flags = parseFlags(rest.slice(1))
     const builder = client.search().search(query)
+    if (flags['database']) builder.database(flags['database'])
     builder.top(flags['top'] ? Number(flags['top']) : 10)
     out(await builder.fetchItems())
     return

@@ -20,6 +20,7 @@ export class SearchBuilder {
   private _params: SearchQuery = {}
 
   search(term: string): this { this._params.search = term; return this }
+  database(id: string): this { this._params.filter = `series_description/database_id eq '${id}'`; return this }
   filter(expr: string): this { this._params.filter = expr; return this }
   select(fields: string): this { this._params.select = fields; return this }
   orderBy(expr: string): this { this._params.orderby = expr; return this }
@@ -43,15 +44,18 @@ export class SearchBuilder {
     const raw = await postJSON<RawSearchResponse>(DATA360_BASE, '/data360/searchv2', body)
 
     const items: SearchResultItem[] = (raw.value ?? [])
-      .map(r => ({
-        id: r.series_description?.idno ?? '',
-        name: r.series_description?.name ?? '',
-        databaseId: r.series_description?.database_id ?? '',
-        score: r['@search.score'] ?? 0,
-        topics: (r.series_description?.topics ?? [])
+      .map(r => {
+        const topics = (r.series_description?.topics ?? [])
           .map(t => t.name ?? t.value ?? '')
           .filter(Boolean)
-      }))
+        return {
+          id: r.series_description?.idno ?? '',
+          name: r.series_description?.name ?? '',
+          databaseId: r.series_description?.database_id ?? '',
+          score: r['@search.score'] ?? 0,
+          ...(topics.length ? { topics } : {})
+        }
+      })
       .filter(item => item.id !== '')
 
     return {
