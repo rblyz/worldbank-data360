@@ -1,24 +1,5 @@
 # Ideas
 
-## CLI для ручного тестирования
-
-Сейчас чтобы дёрнуть SDK из терминала нужно писать громоздкий `node --input-type=module << 'EOF' ... EOF`.
-
-Идея: `scripts/wb.ts` — минимальный CLI поверх `WorldBankClient`.
-
-```bash
-npx tsx scripts/wb.ts countries
-npx tsx scripts/wb.ts data WB_WDI --indicator WB_WDI_SP_POP_TOTL --area POL --from 2020 --to 2023
-npx tsx scripts/wb.ts search poverty --top 5
-npx tsx scripts/wb.ts indicators WB_WDI
-```
-
-Вывод — JSON в stdout, можно пайпить в `jq`.
-
-Альтернатива полегче: добавить `"repl": "node --input-type=module"` в `package.json` scripts — тогда хотя бы `npm run repl << 'EOF' ... EOF`.
-
----
-
 ## AI-first SDK
 
 Основной потребитель пакета сегодня — не человек, а LLM-агент (Claude, GPT и др.).
@@ -69,7 +50,19 @@ client.discover()
 
 ---
 
-## Анализ конкурентов: worldbank/data360-mcp
+## Анализ конкурентов
+
+Подробный разбор всех найденных npm-пакетов: [docs/mcp-research.md](mcp-research.md)
+
+Ссылки:
+- https://www.npmjs.com/package/worldbank-mcp (1.6k downloads/wk — лидер)
+- https://www.npmjs.com/package/world-bank-mcp-server
+- https://www.npmjs.com/package/pipeworx-mcp-worldbank
+- https://www.npmjs.com/package/@data360/mcp-ui (официальный WB React UI)
+- https://www.npmjs.com/package/@data360/mcp-viz-core (официальный WB viz core)
+- https://www.npmjs.com/package/@tianyuio/worldbank-cli
+
+### worldbank/data360-mcp (официальный Python-сервер)
 
 World Bank сами выпустили MCP-сервер на Python: [github.com/worldbank/data360-mcp](https://github.com/worldbank/data360-mcp).
 
