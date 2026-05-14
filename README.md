@@ -12,12 +12,40 @@
 
 <br/>
 
+### [API Reference →](https://data360.worldbank.org/en/api#/)
+
+<br/>
+
 Access 12,000+ World Bank indicators — GDP, population, climate, health, education — from the terminal or your TypeScript code. No API key required.
 
+**Install and use as a CLI:**
+
 ```bash
-npx worldbank-data360 search "co2 emissions per capita" --top 5
-npx worldbank-data360 info WB_WDI_NY_GDP_PCAP_CD
-npx worldbank-data360 data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
+npm install -g worldbank-data360
+worldbank search "gdp per capita" --top 5 --database WB_WDI
+worldbank info WB_WDI_NY_GDP_PCAP_CD
+worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
+```
+
+**Or run without installing:**
+
+```bash
+npx worldbank-data360 search "gdp per capita" --top 5
+```
+
+**Or use as a TypeScript SDK:**
+
+```ts
+import { WorldBankClient } from 'worldbank-data360'
+
+const client = new WorldBankClient()
+
+const result = await client
+  .data('WB_WDI')
+  .indicator('WB_WDI_NY_GDP_PCAP_CD')
+  .area(['POL', 'DEU', 'USA'])
+  .from('2010').to('2023')
+  .fetch()
 ```
 
 <br/>
