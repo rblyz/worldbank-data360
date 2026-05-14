@@ -7,12 +7,12 @@
   <a href="https://www.npmjs.com/package/worldbank-data360"><img src="https://img.shields.io/npm/v/worldbank-data360.svg" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/worldbank-data360"><img src="https://img.shields.io/npm/dw/worldbank-data360.svg" alt="weekly downloads" /></a>
   <a href="https://github.com/worldbank/open-api-specs"><img src="https://img.shields.io/badge/API-Data360-blue" alt="API" /></a>
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license" />
+  <a href="https://github.com/rblyz/worldbank-data360?tab=MIT-1-ov-file#readme"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license" /></a>
 </p>
 
 <br/>
 
-![worldbank discover](worldbank-data360.png)
+![worldbank discover](docs/images/worldbank-data360.png)
 
 ### [API Reference →](https://data360.worldbank.org/en/api#/)
 
