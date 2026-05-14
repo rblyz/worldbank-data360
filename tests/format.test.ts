@@ -89,10 +89,10 @@ describe('formatDataResult()', () => {
     const result = formatDataResult(
       makeResult([
         { period: '2018', value: 0.81, area: 'FIN', extra: { SEX: 'M' } },
-        { period: '2018', value: 0.84, area: 'FIN', extra: { SEX: 'F' } }
-      ]),
-      undefined,
-      { area: 'FIN,SWE' }
+        { period: '2018', value: 0.84, area: 'FIN', extra: { SEX: 'F' } },
+        { period: '2018', value: 0.79, area: 'SWE', extra: { SEX: 'M' } },
+        { period: '2018', value: 0.83, area: 'SWE', extra: { SEX: 'F' } }
+      ])
     )
     const grouped = result.records as Record<string, Array<Record<string, unknown>>>
     assert.equal(grouped['FIN']![0]!['SEX'], 'M')

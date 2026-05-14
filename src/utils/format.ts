@@ -30,11 +30,6 @@ export function formatDataResult(
 ): FormattedDataResult {
   const first = result.records[0] as unknown as Record<string, unknown> | undefined
 
-  const queryAreas = Array.isArray(query?.area)
-    ? query.area
-    : query?.area?.split(',') ?? []
-  const multiArea = queryAreas.length > 1
-
   // Collect all all-caps keys that appear with a non-default value in any record
   const allCapsKeys = new Set<string>()
   for (const r of result.records) {
@@ -60,12 +55,15 @@ export function formatDataResult(
     if (v !== undefined && v !== null && v !== '' && !isSdmxDefault(v)) meta[key] = v
   }
 
+  // Grouping: if area varies across records, group by area
+  const areaValues = new Set(result.records.map(r => r.area))
+  const multiArea = areaValues.size > 1
+
   // Per-record builder
-  const toRecord = (r: DataResult['records'][number], includeArea: boolean) => {
+  const toRecord = (r: DataResult['records'][number]) => {
     const rec = r as unknown as Record<string, unknown>
     const out: Record<string, unknown> = {}
     if (r.period !== undefined) out['period'] = r.period
-    if (includeArea && r.area !== undefined) out['area'] = r.area
     for (const key of varyingKeys) {
       const v = rec[key]
       if (v === undefined || v === null || v === '' || isSdmxDefault(v)) continue
@@ -74,6 +72,10 @@ export function formatDataResult(
     out['value'] = r.value
     return out
   }
+
+  const queryAreas = Array.isArray(query?.area)
+    ? query.area
+    : query?.area?.split(',') ?? []
 
   const indicator = (first?.['indicator'] as string | undefined) ?? query?.indicator
   const area = multiArea
@@ -86,11 +88,11 @@ export function formatDataResult(
     for (const r of result.records) {
       const key = r.area ?? 'unknown'
       if (!grouped[key]) grouped[key] = []
-      grouped[key].push(toRecord(r, false))
+      grouped[key].push(toRecord(r))
     }
     records = grouped
   } else {
-    records = result.records.map(r => toRecord(r, false))
+    records = result.records.map(r => toRecord(r))
   }
 
   return {
