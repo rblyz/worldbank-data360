@@ -26,16 +26,34 @@ npx worldbank-data360 data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,D
 
 ```bash
 # run without installing
-npx worldbank-data360 search "co2 emissions" --top 5
+npx worldbank-data360 search "gdp per capita" --top 5
 
-# or install globally for shorter commands
+# or install globally — then just `worldbank`
 npm install -g worldbank-data360
-worldbank search "co2 emissions" --top 5
+worldbank search "gdp per capita" --top 5
 ```
 
-### Typical workflow
+### Step 1 — Discover what's available
 
-**1. Find an indicator**
+Not sure where to start? See all 100+ databases with indicator counts:
+
+```bash
+worldbank discover
+```
+```json
+{
+  "totalIndicators": 12938,
+  "databases": [
+    { "id": "WB_WDI", "name": "World Development Indicators", "indicatorCount": 1534 },
+    { "id": "WB_GEM", "name": "Global Economic Monitor", "indicatorCount": 801 },
+    ...
+  ]
+}
+```
+
+### Step 2 — Find an indicator
+
+Search across all 12,000+ indicators. Narrow by database to cut through noise:
 
 ```bash
 worldbank search "life expectancy" --top 5 --database WB_WDI
@@ -45,13 +63,22 @@ worldbank search "life expectancy" --top 5 --database WB_WDI
   "total": 549,
   "shown": 5,
   "items": [
-    { "id": "WB_WDI_SP_DYN_LE00_IN", "name": "Life expectancy at birth, total (years)", "databaseId": "WB_WDI", "score": 76.2 },
-    ...
+    {
+      "id": "WB_WDI_SP_DYN_LE00_IN",
+      "name": "Life expectancy at birth, total (years)",
+      "databaseId": "WB_WDI",
+      "score": 76.2,
+      "topics": ["People", "Health"]
+    }
   ]
 }
 ```
 
-**2. Check coverage before fetching**
+The indicator ID encodes the database: `WB_WDI_SP_DYN_LE00_IN` → database `WB_WDI`.
+
+### Step 3 — Check coverage before fetching
+
+Before fetching, see which countries and years actually have data:
 
 ```bash
 worldbank info WB_WDI_SP_DYN_LE00_IN
@@ -65,13 +92,31 @@ worldbank info WB_WDI_SP_DYN_LE00_IN
 }
 ```
 
-If `years` is a list instead of a range, the indicator is published only in specific years — use those exact years in `--from`/`--to`.
+If `years` is a **list** instead of a range, the indicator is not published annually:
 
-**3. Fetch data**
+```bash
+worldbank info WB_HCI_HCI
+```
+```json
+{
+  "name": "Human Capital Index (scale 0-1)",
+  "database": "Human Capital Index (HCI)",
+  "areas": 186,
+  "sex": ["F", "M"],
+  "years": ["2010", "2018", "2020"]
+}
+```
+
+`info` also shows disaggregation dimensions (`sex`, `age`, `urbanisation`) — if they appear, the data has breakdowns which will show up automatically in the records.
+
+### Step 4 — Fetch data
 
 ```bash
 worldbank data WB_WDI --indicator WB_WDI_SP_DYN_LE00_IN --area POL,DEU,USA --from 2010 --to 2023
 ```
+
+**Multiple countries → records are automatically grouped by country code:**
+
 ```json
 {
   "count": 42,
@@ -91,7 +136,40 @@ worldbank data WB_WDI --indicator WB_WDI_SP_DYN_LE00_IN --area POL,DEU,USA --fro
 }
 ```
 
-Multiple countries → records grouped by country code. Single country → flat array. Pipe to jq: `worldbank data ... | jq '.records.POL'`
+**Single country → flat array.** Repeated metadata fields appear once in `meta`, not in every record. SDMX placeholder values (`_T`, `_Z`) are stripped automatically.
+
+**Indicators with sex/age breakdowns show dimensions per record automatically:**
+
+```bash
+worldbank data WB_HCI --indicator WB_HCI_HCI --area FIN,SWE --from 2018 --to 2020
+```
+```json
+{
+  "records": {
+    "FIN": [
+      { "period": "2018", "value": 0.814 },
+      { "period": "2018", "SEX": "M", "value": 0.786 },
+      { "period": "2018", "SEX": "F", "value": 0.844 }
+    ]
+  }
+}
+```
+
+**Pagination is automatic** — the API caps at 1000 records per call. The SDK fetches all pages transparently. By default the CLI shows 100 rows — add `--all` to get everything, or `--top N` to set a custom limit.
+
+Pipe to jq: `worldbank data ... | jq '.records.POL'`
+
+### Other commands
+
+```bash
+# preview a query without making a data request
+worldbank explain WB_WDI --indicator WB_WDI_SP_POP_TOTL --area POL,DEU --from 2010 --to 2023
+
+# list all countries with ISO alpha-3 codes
+worldbank countries
+```
+
+The CLI shows contextual hints in stderr after each command — they don't pollute JSON output and can be silenced with `2>/dev/null`.
 
 ### All commands
 
@@ -103,8 +181,6 @@ Multiple countries → records grouped by country code. Single country → flat 
 | `worldbank data <DB> --indicator <ID> [--area] [--from] [--to] [--top N] [--all]` | Fetch data |
 | `worldbank explain <DB> --indicator <ID> [...]` | Preview query without fetching |
 | `worldbank countries` | List all countries with ISO codes |
-
-Default result limit is 100 rows. Add `--all` to fetch everything.
 
 <br/>
 
@@ -130,7 +206,7 @@ const result = await client
 // result.records  → DataRecord[]
 ```
 
-`OBS_VALUE` from the raw API is always a string — the SDK casts it to `number`. Null and empty fields are stripped. Records are sorted by year, then country code.
+`OBS_VALUE` from the raw API is always a string — the SDK casts it to `number`. Null and empty fields are stripped. Records are sorted by year, then country code. Pagination is handled automatically.
 
 ### Data queries
 
@@ -148,8 +224,6 @@ builder
 
 const result = await builder.fetch()
 ```
-
-Pagination is automatic — the API returns max 1000 records per call, the SDK handles `skip` internally.
 
 ### Search
 
