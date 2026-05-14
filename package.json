@@ -1,5 +1,5 @@
 {
-  "name": "worldbank",
+  "name": "@rblyz/worldbank",
   "version": "0.1.0",
   "description": "TypeScript SDK for World Bank Data360 API",
   "main": "dist/index.js",
