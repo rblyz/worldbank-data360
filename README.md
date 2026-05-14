@@ -39,6 +39,38 @@ console.log(result.records[0])  // { value: 50024.869, area: 'USA', period: '201
 
 `OBS_VALUE` from the raw API is always a string — the SDK casts it to `number` for you. Null and empty fields are stripped from every record.
 
+## CLI
+
+```bash
+npx worldbank discover
+npx worldbank search "birth rate" --top 5
+npx worldbank data WB_WDI --indicator WB_WDI_SP_DYN_CBRT_IN --area POL --from 2000 --to 2023
+npx worldbank explain WB_WDI --indicator WB_WDI_SP_DYN_CBRT_IN --area POL
+npx worldbank countries
+```
+
+The `data` command fetches human-readable names for the indicator and database alongside the data:
+
+```json
+{
+  "count": 24,
+  "indicator": "WB_WDI_SP_DYN_CBRT_IN",
+  "indicatorName": "Birth rate, crude (per 1,000 people)",
+  "area": "POL",
+  "database": "WB_WDI",
+  "databaseName": "World Development Indicators (WDI)",
+  "meta": { "FREQ": "A", "DECIMALS": "2", "OBS_STATUS": "A" },
+  "records": [
+    { "period": "2000", "value": 9.9 },
+    { "period": "2001", "value": 9.6 }
+  ]
+}
+```
+
+Records are sorted by year. Repeated fields (`FREQ`, `DECIMALS`, etc.) appear once in `meta`, not in every record. SDMX placeholder values (`_Z`, `_T`) are stripped automatically.
+
+By default `data` shows up to 100 records — use `--all` to fetch everything or `--top N` to set a limit. Output is JSON, pipeable to `jq`.
+
 ## Getting started without reading docs
 
 Don't know where to begin? Three steps:

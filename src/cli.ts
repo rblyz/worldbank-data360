@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { WorldBankClient } from './client.js'
 import { parseFlags } from './utils/flags.js'
+import { formatDataResult } from './utils/format.js'
+import { fetchIndicatorMeta } from './endpoints/metadata.js'
 
 const client = new WorldBankClient()
 const [cmd, ...rest] = process.argv.slice(2)
@@ -77,14 +79,17 @@ async function main() {
     if (cmd === 'explain') {
       out(builder.explain())
     } else {
-      const result = await builder.fetch()
+      const [result, meta] = await Promise.all([
+        builder.fetch(),
+        fetchIndicatorMeta(flags['indicator'])
+      ])
       const all = 'all' in flags
       const top = flags['top'] ? Number(flags['top']) : 100
       if (!all && result.records.length > top) {
         result.records = result.records.slice(0, top)
         process.stderr.write(`Note: showing ${top} of ${result.count} records. Use --all to fetch everything or --top N to set limit.\n`)
       }
-      out(result)
+      out(formatDataResult(result, meta ? { indicatorName: meta.name, databaseName: meta.databaseName } : undefined))
     }
     return
   }
