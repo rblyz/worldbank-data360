@@ -30,12 +30,15 @@ export function formatDataResult(
 ): FormattedDataResult {
   const first = result.records[0] as unknown as Record<string, unknown> | undefined
 
+  // Internal API fields that carry no useful signal for users
+  const ALWAYS_SKIP = new Set(['LATEST_DATA', 'UNIT_MULT', 'TIME_FORMAT', 'OBS_CONF', 'OBS_STATUS', 'FREQ', 'DECIMALS', 'AGG_METHOD', 'DATABASE_ID'])
+
   // Collect all all-caps keys that appear with a non-default value in any record
   const allCapsKeys = new Set<string>()
   for (const r of result.records) {
     const rec = r as unknown as Record<string, unknown>
     for (const [key, v] of Object.entries(rec)) {
-      if (!isUpperCase(key) || v === undefined || v === null || v === '') continue
+      if (ALWAYS_SKIP.has(key) || !isUpperCase(key) || v === undefined || v === null || v === '') continue
       if (!isSdmxDefault(v)) allCapsKeys.add(key)
     }
   }

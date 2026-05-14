@@ -73,16 +73,18 @@ describe('formatDataResult()', () => {
     assert.deepEqual(keys.sort(), ['period', 'value'])
   })
 
-  test('all-caps fields go to meta, SDMX defaults (_Z _T) stripped', () => {
+  test('all-caps fields go to meta, SDMX defaults and noise fields stripped', () => {
     const result = formatDataResult(makeResult([{
       period: '2023',
       value: 7.4,
-      extra: { FREQ: 'A', SEX: '_T', AGE: '_T', OBS_STATUS: 'A' }
+      extra: { UNIT_MEASURE: 'USD', SEX: '_T', AGE: '_T', OBS_STATUS: 'A', FREQ: 'A', LATEST_DATA: false }
     }]))
-    assert.equal(result.meta['FREQ'], 'A')
-    assert.equal(result.meta['OBS_STATUS'], 'A')
+    assert.equal(result.meta['UNIT_MEASURE'], 'USD')
     assert.equal('SEX' in result.meta, false)
     assert.equal('AGE' in result.meta, false)
+    assert.equal('OBS_STATUS' in result.meta, false)
+    assert.equal('FREQ' in result.meta, false)
+    assert.equal('LATEST_DATA' in result.meta, false)
   })
 
   test('varying all-caps fields appear per record, not in meta', () => {

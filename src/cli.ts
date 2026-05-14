@@ -61,21 +61,30 @@ async function main() {
     const indicatorId = rest[0]
     if (!indicatorId || indicatorId.startsWith('--')) { console.error('Usage: worldbank info <INDICATOR_ID>'); process.exit(1) }
     const databaseId = indicatorId.split('_').slice(0, 2).join('_')
-    const raw = await client.disaggregation(databaseId).indicator(indicatorId).fetch() as Array<{ field_name: string; label_name: string; field_value: string[] }>
-    const SKIP_FIELDS = new Set(['INDICATOR', 'FREQ', 'COMP_BREAKDOWN_1', 'COMP_BREAKDOWN_2', 'COMP_BREAKDOWN_3'])
+    const SKIP_FIELDS = new Set(['INDICATOR', 'FREQ', 'COMP_BREAKDOWN_1', 'COMP_BREAKDOWN_2', 'COMP_BREAKDOWN_3', 'UNIT_MEASURE', 'TIME_FORMAT', 'OBS_CONF', 'OBS_STATUS', 'DECIMALS', 'AGG_METHOD'])
+    const FIELD_LABELS: Record<string, string> = {
+      SEX: 'sex', AGE: 'age', URBANISATION: 'urbanisation', REF_AREA: 'areas', TIME_PERIOD: 'years'
+    }
     const isSdmxDefault = (v: string) => v.startsWith('_')
+    const [raw, meta] = await Promise.all([
+      client.disaggregation(databaseId).indicator(indicatorId).fetch() as Promise<Array<{ field_name: string; label_name: string; field_value: string[] }>>,
+      fetchIndicatorMeta(indicatorId)
+    ])
     const result: Record<string, unknown> = {}
+    if (meta?.name) result['name'] = meta.name
+    if (meta?.databaseName) result['database'] = meta.databaseName
     for (const dim of raw) {
       if (SKIP_FIELDS.has(dim.field_name)) continue
       const values = dim.field_value.filter(v => !isSdmxDefault(v))
       if (values.length === 0) continue
+      const key = FIELD_LABELS[dim.field_name] ?? dim.field_name.toLowerCase()
       if (dim.field_name === 'TIME_PERIOD') {
         const sorted = [...values].sort()
         result['years'] = `${sorted[0]}–${sorted[sorted.length - 1]}`
       } else if (dim.field_name === 'REF_AREA') {
         result['areas'] = values.length
       } else {
-        result[dim.label_name] = values
+        result[key] = values
       }
     }
     out(result)
@@ -125,12 +134,14 @@ async function main() {
       if (wasTruncated) {
         result.records = result.records.slice(0, top)
       }
-      out(formatDataResult(
+      const formatted = formatDataResult(
         result,
         meta ? { indicatorName: meta.name, databaseName: meta.databaseName } : undefined,
         { indicator: flags['indicator'], area: flags['area'] },
         wasTruncated ? { top, total: result.count } : undefined
-      ))
+      )
+      out(formatted)
+      if (result.records.length === 0) process.exit(1)
     }
     return
   }
