@@ -10,10 +10,10 @@ The fastest way to explore World Bank data without writing code.
 
 ```bash
 # run without installing
-npx @rblyz/worldbank search "co2 emissions" --top 5
+npx worldbank-data360 search "co2 emissions" --top 5
 
 # install globally for shorter commands
-npm install -g @rblyz/worldbank
+npm install -g worldbank-data360
 worldbank search "co2 emissions" --top 5
 ```
 
@@ -93,11 +93,11 @@ Default result limit is 100 rows. Add `--all` to fetch everything.
 ## SDK
 
 ```bash
-npm install @rblyz/worldbank
+npm install worldbank-data360
 ```
 
 ```ts
-import { WorldBankClient } from '@rblyz/worldbank'
+import { WorldBankClient } from 'worldbank-data360'
 
 const client = new WorldBankClient()
 
@@ -190,7 +190,7 @@ const countries = await client.countries().fetch()
 ### Error handling
 
 ```ts
-import { SDKRequestError } from '@rblyz/worldbank'
+import { SDKRequestError } from 'worldbank-data360'
 
 try {
   await client.data('INVALID_DB').fetch()
