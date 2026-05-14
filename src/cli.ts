@@ -19,6 +19,7 @@ Commands:
   discover                              List all available databases
   search <query> [--top N]             Search indicators by keyword
                [--database WB_WDI]
+  info <INDICATOR_ID>                  Show available dimensions and year range
   data <DB> --indicator <ID>           Fetch data (default: --top 100)
                [--area POL,DEU,USA]
                [--from YEAR] [--to YEAR]
@@ -30,6 +31,7 @@ Commands:
 Examples:
   npx worldbank discover
   npx worldbank search "co2 emissions" --top 5
+  npx worldbank info WB_WDI_SP_POP_TOTL
   npx worldbank data WB_WDI --indicator WB_WDI_SP_POP_TOTL --area POL --from 2020 --to 2023
   npx worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2018 --to 2023
   npx worldbank explain WB_WDI --indicator WB_WDI_SP_POP_TOTL --area POL,DEU --from 2010 --to 2023
@@ -52,6 +54,31 @@ async function main() {
     const result = await client.countries().fetch()
     const items = result.items.filter(c => c.region?.id !== 'NA')
     out({ ...result, items })
+    return
+  }
+
+  if (cmd === 'info') {
+    const indicatorId = rest[0]
+    if (!indicatorId || indicatorId.startsWith('--')) { console.error('Usage: worldbank info <INDICATOR_ID>'); process.exit(1) }
+    const databaseId = indicatorId.split('_').slice(0, 2).join('_')
+    const raw = await client.disaggregation(databaseId).indicator(indicatorId).fetch() as Array<{ field_name: string; label_name: string; field_value: string[] }>
+    const SKIP_FIELDS = new Set(['INDICATOR', 'FREQ', 'COMP_BREAKDOWN_1', 'COMP_BREAKDOWN_2', 'COMP_BREAKDOWN_3'])
+    const isSdmxDefault = (v: string) => v.startsWith('_')
+    const result: Record<string, unknown> = {}
+    for (const dim of raw) {
+      if (SKIP_FIELDS.has(dim.field_name)) continue
+      const values = dim.field_value.filter(v => !isSdmxDefault(v))
+      if (values.length === 0) continue
+      if (dim.field_name === 'TIME_PERIOD') {
+        const sorted = [...values].sort()
+        result['years'] = `${sorted[0]}–${sorted[sorted.length - 1]}`
+      } else if (dim.field_name === 'REF_AREA') {
+        result['areas'] = values.length
+      } else {
+        result[dim.label_name] = values
+      }
+    }
+    out(result)
     return
   }
 
