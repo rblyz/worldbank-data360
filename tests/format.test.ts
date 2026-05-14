@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { formatDataResult } from '../src/utils/format.js'
+import { formatDataResult, formatAsCsv } from '../src/utils/format.js'
 import type { DataResult } from '../src/types/params.js'
 
 function makeResult(records: Array<{ period: string; value: number; area?: string; extra?: Record<string, unknown> }>): DataResult {
@@ -135,5 +135,58 @@ describe('formatDataResult()', () => {
   test('non-empty records — no warning', () => {
     const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
     assert.equal(result.warning, undefined)
+  })
+})
+
+describe('formatAsCsv()', () => {
+  test('single area — rows include area column', () => {
+    const formatted = formatDataResult(makeResult([
+      { period: '2020', value: 100, area: 'POL' },
+      { period: '2021', value: 110, area: 'POL' }
+    ]))
+    const csv = formatAsCsv(formatted)
+    const lines = csv.trim().split('\n')
+    assert.equal(lines[0], 'area,period,value')
+    assert.equal(lines[1], 'POL,2020,100')
+    assert.equal(lines[2], 'POL,2021,110')
+  })
+
+  test('multi area — all areas flattened into rows', () => {
+    const formatted = formatDataResult(makeResult([
+      { period: '2020', value: 100, area: 'POL' },
+      { period: '2020', value: 200, area: 'DEU' }
+    ]))
+    const csv = formatAsCsv(formatted)
+    const lines = csv.trim().split('\n')
+    assert.equal(lines[0], 'area,period,value')
+    assert.equal(lines.length, 3)
+    assert.ok(lines.some(l => l.startsWith('POL,')))
+    assert.ok(lines.some(l => l.startsWith('DEU,')))
+  })
+
+  test('extra dimensions appear as columns', () => {
+    const formatted = formatDataResult(makeResult([
+      { period: '2018', value: 0.81, area: 'FIN', extra: { SEX: 'M' } },
+      { period: '2018', value: 0.84, area: 'FIN', extra: { SEX: 'F' } }
+    ]))
+    const csv = formatAsCsv(formatted)
+    const lines = csv.trim().split('\n')
+    assert.ok(lines[0]!.includes('SEX'))
+    assert.ok(lines.some(l => l.includes(',M')))
+    assert.ok(lines.some(l => l.includes(',F')))
+  })
+
+  test('values with commas are quoted', () => {
+    const formatted = formatDataResult(makeResult([
+      { period: '2020', value: 100, area: 'POL', extra: { SEX: 'note, with comma' } },
+      { period: '2021', value: 110, area: 'POL', extra: { SEX: 'other' } }
+    ]))
+    const csv = formatAsCsv(formatted)
+    assert.ok(csv.includes('"note, with comma"'))
+  })
+
+  test('empty records — returns empty string', () => {
+    const formatted = formatDataResult({ count: 0, records: [] }, undefined, { area: 'POL' })
+    assert.equal(formatAsCsv(formatted), '')
   })
 })

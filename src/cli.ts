@@ -2,6 +2,7 @@
 import { WorldBankClient } from './client.js'
 import { parseFlags } from './utils/flags.js'
 import { formatDataResult, formatAsCsv, isSdmxDefault } from './utils/format.js'
+import { printDiscoverIntro } from './utils/discover-intro.js'
 import { fetchIndicatorMeta } from './endpoints/metadata.js'
 import { getHint } from './hints.js'
 
@@ -188,47 +189,6 @@ async function main() {
   process.exit(1)
 }
 
-function printDiscoverIntro(totalIndicators: number): string {
-  return `
-worldbank-data360  —  ${totalIndicators.toLocaleString()} indicators from the World Bank and partners
-
-QUICK START
-
-  1. Search for an indicator
-       worldbank search "gdp per capita" --top 5
-
-  2. Check what years and countries actually have data
-       worldbank info WB_WDI_NY_GDP_PCAP_CD
-
-  3. Fetch
-       worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
-
-  Narrow to a specific database:
-       worldbank search "co2 emissions" --database WB_WDI --top 5
-
-  Filter one country from multi-country results with jq:
-       worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA | jq '.records.POL'
-
-  Export to CSV (opens in Excel / Google Sheets):
-       worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --format csv > gdp.csv
-
-DATABASE LIST
-
-  100+ databases: WB_WDI (World Development Indicators), WB_GEM (Global Economic Monitor),
-  IMF_DOT (Direction of Trade Statistics), WB_HCI (Human Capital Index), and more.
-
-  Full list as JSON:  worldbank discover --databases
-  Filter by database: worldbank search "..." --database WB_WDI
-
-OTHER COMMANDS
-
-  worldbank info <INDICATOR_ID>                      year range, countries, breakdowns
-  worldbank explain <DB> --indicator <ID> [...]      preview query without fetching
-  worldbank countries                                all countries with ISO alpha-3 codes
-  worldbank help                                     command reference
-
-`
-}
 
 main().catch(err => {
   console.error(err instanceof Error ? err.message : String(err))
