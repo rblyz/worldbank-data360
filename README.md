@@ -9,12 +9,12 @@ No API key required — the API is fully public.
 The fastest way to explore World Bank data without writing code.
 
 ```bash
+# without installing
 npx worldbank search "co2 emissions" --top 5
-npx worldbank search "gdp per capita" --top 5 --database WB_WDI
-npx worldbank info WB_WDI_NY_GDP_PCAP_CD
-npx worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
-npx worldbank discover
-npx worldbank countries
+
+# or install globally — then just `worldbank`
+npm install -g worldbank
+worldbank search "co2 emissions" --top 5
 ```
 
 ### Typical workflow
