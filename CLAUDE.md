@@ -51,12 +51,6 @@ npm run example         # run examples/gdp-by-country.ts via tsx
 
 Do NOT publish after every change. Batch changes and publish once when ready.
 
-```bash
-npm version patch       # bump version (patch/minor/major)
-npm run build
-npm publish --access=public
-```
-
 ## Fluent API shape (target)
 
 ```ts
