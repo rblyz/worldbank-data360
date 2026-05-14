@@ -92,14 +92,15 @@ async function main() {
       ])
       const all = 'all' in flags
       const top = flags['top'] ? Number(flags['top']) : 100
-      if (!all && result.records.length > top) {
+      const wasTruncated = !all && result.records.length > top
+      if (wasTruncated) {
         result.records = result.records.slice(0, top)
-        process.stderr.write(`Note: showing ${top} of ${result.count} records. Use --all to fetch everything or --top N to set limit.\n`)
       }
       out(formatDataResult(
         result,
         meta ? { indicatorName: meta.name, databaseName: meta.databaseName } : undefined,
-        { indicator: flags['indicator'], area: flags['area'] }
+        { indicator: flags['indicator'], area: flags['area'] },
+        wasTruncated ? { top, total: result.count } : undefined
       ))
     }
     return

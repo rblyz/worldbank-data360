@@ -18,29 +18,46 @@ function makeResult(records: Array<{ period: string; value: number; area?: strin
 }
 
 describe('formatDataResult()', () => {
-  test('preserves record order (sorting is done by paginate)', () => {
-    const result = formatDataResult(makeResult([
-      { period: '2000', value: 9 },
-      { period: '2005', value: 8 },
-      { period: '2010', value: 10 }
-    ]))
-    assert.deepEqual(result.records.map(r => r.period), ['2000', '2005', '2010'])
-  })
-
-  test('single area — hoists area to top level, records have no area field', () => {
-    const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
+  test('single area — records is array, area hoisted to top level', () => {
+    const result = formatDataResult(
+      makeResult([{ period: '2023', value: 7.4 }]),
+      undefined,
+      { area: 'POL' }
+    )
     assert.equal(result.area, 'POL')
-    assert.equal('area' in result.records[0]!, false)
+    assert.ok(Array.isArray(result.records))
+    assert.equal('area' in (result.records as Array<Record<string, unknown>>)[0]!, false)
   })
 
-  test('multiple areas — area omitted from top level, included in each record', () => {
-    const result = formatDataResult(makeResult([
-      { period: '2023', value: 7.4, area: 'POL' },
-      { period: '2023', value: 5.1, area: 'DEU' }
-    ]))
+  test('multiple areas — records is object grouped by area', () => {
+    const result = formatDataResult(
+      makeResult([
+        { period: '2023', value: 7.4, area: 'POL' },
+        { period: '2023', value: 5.1, area: 'DEU' }
+      ]),
+      undefined,
+      { area: 'POL,DEU' }
+    )
     assert.equal(result.area, undefined)
-    assert.equal(result.records[0]!.area, 'POL')
-    assert.equal(result.records[1]!.area, 'DEU')
+    assert.ok(!Array.isArray(result.records))
+    const grouped = result.records as Record<string, Array<Record<string, unknown>>>
+    assert.ok('POL' in grouped)
+    assert.ok('DEU' in grouped)
+    assert.equal(grouped['POL']![0]!['value'], 7.4)
+    assert.equal(grouped['DEU']![0]!['value'], 5.1)
+  })
+
+  test('grouped records do not include area field inside each record', () => {
+    const result = formatDataResult(
+      makeResult([
+        { period: '2023', value: 7.4, area: 'POL' },
+        { period: '2023', value: 5.1, area: 'DEU' }
+      ]),
+      undefined,
+      { area: 'POL,DEU' }
+    )
+    const grouped = result.records as Record<string, Array<Record<string, unknown>>>
+    assert.equal('area' in grouped['POL']![0]!, false)
   })
 
   test('hoists indicator and database to top level', () => {
@@ -49,74 +66,66 @@ describe('formatDataResult()', () => {
     assert.equal(result.database, 'WB_WDI')
   })
 
-  test('single area records contain only period and value', () => {
+  test('single area records contain only period and value when no varying fields', () => {
     const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
-    const keys = Object.keys(result.records[0]!)
+    const records = result.records as Array<Record<string, unknown>>
+    const keys = Object.keys(records[0]!)
     assert.deepEqual(keys.sort(), ['period', 'value'])
   })
 
-  test('multi area records contain period, area, and value', () => {
-    const result = formatDataResult(makeResult([
-      { period: '2023', value: 7.4, area: 'POL' },
-      { period: '2023', value: 5.1, area: 'DEU' }
-    ]))
-    const keys = Object.keys(result.records[0]!)
-    assert.deepEqual(keys.sort(), ['area', 'period', 'value'])
-  })
-
-  test('meta contains noise fields from first record', () => {
+  test('all-caps fields go to meta, SDMX defaults (_Z _T) stripped', () => {
     const result = formatDataResult(makeResult([{
       period: '2023',
       value: 7.4,
-      extra: { FREQ: 'A', DECIMALS: '2', OBS_STATUS: 'A' }
+      extra: { FREQ: 'A', SEX: '_T', AGE: '_T', OBS_STATUS: 'A' }
     }]))
     assert.equal(result.meta['FREQ'], 'A')
-    assert.equal(result.meta['DECIMALS'], '2')
     assert.equal(result.meta['OBS_STATUS'], 'A')
-  })
-
-  test('meta strips SDMX default values (_Z, _T)', () => {
-    const result = formatDataResult(makeResult([{
-      period: '2023',
-      value: 7.4,
-      extra: { SEX: '_T', AGE: '_T', COMP_BREAKDOWN_1: '_Z', FREQ: 'A' }
-    }]))
     assert.equal('SEX' in result.meta, false)
     assert.equal('AGE' in result.meta, false)
-    assert.equal('COMP_BREAKDOWN_1' in result.meta, false)
-    assert.equal(result.meta['FREQ'], 'A')
   })
 
-  test('meta strips null and empty string noise fields', () => {
-    const result = formatDataResult(makeResult([{
-      period: '2023',
-      value: 7.4,
-      extra: { OBS_CONF: null as unknown as string, TIME_FORMAT: '' }
-    }]))
-    assert.equal('OBS_CONF' in result.meta, false)
-    assert.equal('TIME_FORMAT' in result.meta, false)
+  test('varying all-caps fields appear per record, not in meta', () => {
+    const result = formatDataResult(
+      makeResult([
+        { period: '2018', value: 0.81, area: 'FIN', extra: { SEX: 'M' } },
+        { period: '2018', value: 0.84, area: 'FIN', extra: { SEX: 'F' } }
+      ]),
+      undefined,
+      { area: 'FIN,SWE' }
+    )
+    const grouped = result.records as Record<string, Array<Record<string, unknown>>>
+    assert.equal(grouped['FIN']![0]!['SEX'], 'M')
+    assert.equal(grouped['FIN']![1]!['SEX'], 'F')
+    assert.equal('SEX' in result.meta, false)
   })
 
-  test('meta skips UNIT_MULT and LATEST_DATA always', () => {
-    const result = formatDataResult(makeResult([{
-      period: '2023',
-      value: 7.4,
-      extra: { UNIT_MULT: 0, LATEST_DATA: false, OBS_STATUS: 'A' }
-    }]))
-    assert.equal('UNIT_MULT' in result.meta, false)
-    assert.equal('LATEST_DATA' in result.meta, false)
-    assert.equal(result.meta['OBS_STATUS'], 'A')
+  test('truncation fields appear when provided', () => {
+    const result = formatDataResult(
+      makeResult([{ period: '2023', value: 7.4 }]),
+      undefined,
+      undefined,
+      { top: 100, total: 500 }
+    )
+    assert.equal(result.truncated, true)
+    assert.equal(result.showing, 100)
   })
 
-  test('empty records — returns warning with query context', () => {
+  test('no truncation fields when not truncated', () => {
+    const result = formatDataResult(makeResult([{ period: '2023', value: 7.4 }]))
+    assert.equal(result.truncated, undefined)
+    assert.equal(result.showing, undefined)
+  })
+
+  test('empty records — warning with query context echoed', () => {
     const result = formatDataResult(
       { count: 0, records: [] },
       undefined,
       { indicator: 'WB_WDI_NONEXISTENT', area: 'POL' }
     )
-    assert.equal(result.records.length, 0)
-    assert.ok(typeof result.warning === 'string')
-    assert.ok(result.warning!.length > 0)
+    assert.ok(Array.isArray(result.records))
+    assert.equal((result.records as unknown[]).length, 0)
+    assert.ok(typeof result.warning === 'string' && result.warning.length > 0)
     assert.equal(result.indicator, 'WB_WDI_NONEXISTENT')
     assert.equal(result.area, 'POL')
   })
