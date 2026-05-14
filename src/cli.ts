@@ -156,7 +156,8 @@ async function main() {
         { indicator: flags['indicator'], area: flags['area'] },
         wasTruncated ? { top, total: result.count } : undefined
       )
-      if (flags['format'] === 'csv') {
+      const isCsv = flags['format'] === 'csv'
+      if (isCsv) {
         process.stdout.write(formatAsCsv(formatted) + '\n')
       } else {
         out(formatted)
@@ -164,11 +165,13 @@ async function main() {
       if (result.records.length === 0) {
         hint('after-empty')
         process.exit(1)
-      } else if (wasTruncated) {
-        hint('after-truncated')
-      } else {
-        const areas = flags['area']?.split(',') ?? []
-        hint(areas.length > 1 ? 'after-data-multi-area' : 'after-data-single-area')
+      } else if (!isCsv) {
+        if (wasTruncated) {
+          hint('after-truncated')
+        } else {
+          const areas = flags['area']?.split(',') ?? []
+          hint(areas.length > 1 ? 'after-data-multi-area' : 'after-data-single-area')
+        }
       }
     }
     return
