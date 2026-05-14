@@ -53,6 +53,7 @@ Examples:
 async function main() {
   if (!cmd || cmd === 'help' || cmd === '--help') {
     help()
+    hint('general')
     return
   }
 

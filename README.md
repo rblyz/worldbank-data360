@@ -1,25 +1,100 @@
 # worldbank
 
-TypeScript SDK for the [World Bank Data360 API](https://data360api.worldbank.org). Fluent interface, automatic pagination, AI-first design.
+TypeScript SDK and CLI for the [World Bank Data360 API](https://data360api.worldbank.org). Fluent interface, automatic pagination, AI-first design.
 
-```ts
-const data = await client
-  .data('WB_WDI')
-  .indicator('WB_WDI_SP_POP_TOTL')
-  .area(['POL', 'DEU', 'USA'])
-  .from('2000').to('2023')
-  .fetch()
+No API key required — the API is fully public.
+
+## CLI
+
+The fastest way to explore World Bank data without writing code.
+
+```bash
+npx worldbank search "co2 emissions" --top 5
+npx worldbank search "gdp per capita" --top 5 --database WB_WDI
+npx worldbank info WB_WDI_NY_GDP_PCAP_CD
+npx worldbank data WB_WDI --indicator WB_WDI_NY_GDP_PCAP_CD --area POL,DEU,USA --from 2010 --to 2023
+npx worldbank discover
+npx worldbank countries
 ```
 
-## Install
+### Typical workflow
+
+**1. Find an indicator**
+
+```bash
+worldbank search "life expectancy" --top 5 --database WB_WDI
+```
+```json
+{
+  "total": 549,
+  "shown": 5,
+  "items": [
+    { "id": "WB_WDI_SP_DYN_LE00_IN", "name": "Life expectancy at birth, total (years)", "databaseId": "WB_WDI", "score": 76.2 },
+    ...
+  ]
+}
+```
+
+**2. Check coverage before fetching**
+
+```bash
+worldbank info WB_WDI_SP_DYN_LE00_IN
+```
+```json
+{
+  "name": "Life expectancy at birth, total (years)",
+  "database": "World Development Indicators (WDI)",
+  "areas": 265,
+  "years": "1960–2024"
+}
+```
+
+If `years` is a list instead of a range, the indicator is published only in specific years — request only those years in `--from`/`--to`.
+
+**3. Fetch data**
+
+```bash
+worldbank data WB_WDI --indicator WB_WDI_SP_DYN_LE00_IN --area POL,DEU,USA --from 2010 --to 2023
+```
+```json
+{
+  "count": 42,
+  "indicator": "WB_WDI_SP_DYN_LE00_IN",
+  "indicatorName": "Life expectancy at birth, total (years)",
+  "database": "WB_WDI",
+  "databaseName": "World Development Indicators (WDI)",
+  "meta": { "UNIT_MEASURE": "YR" },
+  "records": {
+    "DEU": [
+      { "period": "2010", "value": 80.5 },
+      { "period": "2011", "value": 80.6 }
+    ],
+    "POL": [...],
+    "USA": [...]
+  }
+}
+```
+
+Multiple countries → records grouped by country code. Single country → flat array. Pipe to jq: `worldbank data ... | jq '.records.POL'`
+
+### All CLI commands
+
+| Command | Description |
+|---|---|
+| `worldbank discover` | List all 100+ databases with indicator counts |
+| `worldbank search <query> [--top N] [--database ID]` | Search indicators by keyword |
+| `worldbank info <INDICATOR_ID>` | Show name, countries, year range, and dimensions |
+| `worldbank data <DB> --indicator <ID> [--area] [--from] [--to] [--top N] [--all]` | Fetch data |
+| `worldbank explain <DB> --indicator <ID> [...]` | Preview query without fetching |
+| `worldbank countries` | List all countries with ISO codes |
+
+Default result limit is 100 rows. Add `--all` to fetch everything.
+
+## SDK
 
 ```bash
 npm install worldbank
 ```
-
-No API key required — both APIs are fully public.
-
-## Quick start
 
 ```ts
 import { WorldBankClient } from 'worldbank'
@@ -33,191 +108,86 @@ const result = await client
   .from('2010').to('2023')
   .fetch()
 
-console.log(result.count)       // 42
-console.log(result.records[0])  // { value: 50024.869, area: 'USA', period: '2011', ... }
+// result.count    → number of records
+// result.records  → DataRecord[]
 ```
 
-`OBS_VALUE` from the raw API is always a string — the SDK casts it to `number` for you. Null and empty fields are stripped from every record.
+`OBS_VALUE` from the raw API is always a string — the SDK casts it to `number`. Null and empty fields are stripped. Records are sorted by year, then country code.
 
-## CLI
-
-```bash
-npx worldbank discover
-npx worldbank search "birth rate" --top 5
-npx worldbank data WB_WDI --indicator WB_WDI_SP_DYN_CBRT_IN --area POL --from 2000 --to 2023
-npx worldbank explain WB_WDI --indicator WB_WDI_SP_DYN_CBRT_IN --area POL
-npx worldbank countries
-```
-
-The `data` command fetches human-readable names for the indicator and database alongside the data:
-
-```json
-{
-  "count": 24,
-  "indicator": "WB_WDI_SP_DYN_CBRT_IN",
-  "indicatorName": "Birth rate, crude (per 1,000 people)",
-  "area": "POL",
-  "database": "WB_WDI",
-  "databaseName": "World Development Indicators (WDI)",
-  "meta": { "FREQ": "A", "DECIMALS": "2", "OBS_STATUS": "A" },
-  "records": [
-    { "period": "2000", "value": 9.9 },
-    { "period": "2001", "value": 9.6 }
-  ]
-}
-```
-
-Records are sorted by year. Repeated fields (`FREQ`, `DECIMALS`, etc.) appear once in `meta`, not in every record. SDMX placeholder values (`_Z`, `_T`) are stripped automatically.
-
-By default `data` shows up to 100 records — use `--all` to fetch everything or `--top N` to set a limit. Output is JSON, pipeable to `jq`.
-
-## Getting started without reading docs
-
-Don't know where to begin? Three steps:
-
-```ts
-// 1. What's available?
-const overview = await client.discover()
-// → { totalIndicators: 12938, databases: [{ id: 'WB_WDI', indicatorCount: 1534 }, ...], hint: '...' }
-
-// 2. Find an indicator by keyword
-const results = await client.search().search('co2 emissions').top(5).fetchItems()
-// → { count: 300, items: [{ id: 'WB_SSGD_CO2_EMISSIONS', name: 'CO2 emissions', databaseId: 'WB_SSGD' }, ...] }
-
-// 3. Fetch the data
-const data = await client.data('WB_SSGD').indicator('WB_SSGD_CO2_EMISSIONS').area('POL').from('2000').to('2023').fetch()
-```
-
-## Fluent API
-
-### Data queries — `client.data(databaseId)`
+### Data queries
 
 ```ts
 const builder = client.data('WB_WDI')
 
-// Filters — all optional, all chainable
 builder
-  .indicator('WB_WDI_SP_POP_TOTL')   // indicator ID
-  .area('POL')                         // single country
-  .area(['POL', 'DEU', 'USA'])         // or multiple
-  .from('2000')                        // start year
-  .to('2023')                          // end year
-  .sex('F')                            // demographic filters
+  .indicator('WB_WDI_SP_POP_TOTL')
+  .area(['POL', 'DEU', 'USA'])   // single string or array
+  .from('2000')
+  .to('2023')
+  .sex('F')                       // demographic filters
   .age('Y15T24')
   .urbanisation('U')
-  .breakdown1('...')                   // indicator-specific dimensions
-  .freq('A')                           // frequency
-  .unitMeasure('USD')
 
-// Fetch — handles pagination automatically (API max 1000 records/call)
 const result = await builder.fetch()
-// → { count: number, records: DataRecord[] }
 ```
 
-### AI-first methods
+### Search
 
 ```ts
-// explain() — inspect the query before fetching, no HTTP call
-const info = client
-  .data('WB_WDI')
-  .indicator('WB_WDI_SP_POP_TOTL')
-  .area(['POL', 'DEU'])
-  .from('2010').to('2023')
-  .explain()
-// → {
-//     databaseId: 'WB_WDI',
-//     indicator: 'WB_WDI_SP_POP_TOTL',
-//     area: ['POL', 'DEU'],
-//     timePeriodFrom: '2010',
-//     timePeriodTo: '2023',
-//     filters: {},
-//     description: 'Database: WB_WDI | Indicator: WB_WDI_SP_POP_TOTL | Area: POL, DEU | Period: 2010–2023'
-//   }
-
-// toContext() — fetch and format as a markdown table ready for an LLM prompt
-const ctx = await client
-  .data('WB_WDI')
-  .indicator('WB_WDI_SP_POP_TOTL')
-  .area('POL')
-  .from('2020').to('2023')
-  .toContext()
-// → ## World Bank Data: Database: WB_WDI | ...
-//   Total records: 4
-//
-//   | period | area | indicator | value |
-//   |--------|------|-----------|-------|
-//   | 2020   | POL  | WB_WDI_SP_POP_TOTL | 37515748 |
-//   ...
-```
-
-### Search — `client.search()`
-
-Full-text and semantic search across all Data360 datasets.
-
-```ts
-// fetchItems() — normalized results: id, name, databaseId, score, topics
 const results = await client
   .search()
   .search('poverty')
+  .database('WB_WDI')   // optional: filter by database
   .top(10)
   .fetchItems()
-// → { count: 1501, items: [{ id: 'WB_WDI_SI_POV_GAPS', name: 'Poverty gap...', databaseId: 'WB_WDI', score: 43.8, topics: [] }] }
-
-// fetch() — raw JSON for advanced use (OData filters, vector queries, facets)
-const raw = await client
-  .search()
-  .search('poverty')
-  .filter("series_description/topics/any(t: t/name eq 'Health')")
-  .top(10)
-  .fetch()
+// → { total, shown, items: [{ id, name, databaseId, score, topics? }] }
 ```
 
-### Indicators — `client.indicators(datasetId)`
-
-List all indicator IDs available in a dataset.
+### Discover databases
 
 ```ts
-const indicators = await client.indicators('WB_WDI').fetch()
+const overview = await client.discover()
+// → { totalIndicators: 12938, databases: [{ id: 'WB_WDI', name: 'World Development Indicators', indicatorCount: 1534 }, ...] }
 ```
 
-### Disaggregation — `client.disaggregation(datasetId)`
-
-Get available disaggregation dimensions (sex, age, urbanisation, etc.) for a dataset or specific indicator.
+### Indicator dimensions
 
 ```ts
 const dims = await client
   .disaggregation('WB_WDI')
   .indicator('WB_WDI_SP_POP_TOTL')
   .fetch()
+// → [{ field_name: 'SEX', label_name: 'Sex', field_value: ['M', 'F', '_T'] }, ...]
 ```
 
-### Metadata — `client.metadata()`
-
-Query dataset metadata using [OData filter syntax](https://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html).
+### AI-first methods
 
 ```ts
-const meta = await client
-  .metadata()
-  .query("*&$filter=series_description/database_id eq 'WB_WDI'&$select=series_description/idno,series_description/name")
+// Preview query without fetching
+const info = client
+  .data('WB_WDI')
+  .indicator('WB_WDI_SP_POP_TOTL')
+  .area(['POL', 'DEU'])
+  .from('2010').to('2023')
+  .explain()
+
+// Fetch and format as markdown table for an LLM prompt
+const ctx = await client
+  .data('WB_WDI')
+  .indicator('WB_WDI_SP_POP_TOTL')
+  .area('POL')
+  .from('2020').to('2023')
+  .toContext()
 ```
 
-### Reference data (World Bank V2 API)
+### Countries
 
 ```ts
-// Countries — id, name, region, income level, coordinates
 const countries = await client.countries().fetch()
-// → { meta: { total: 296, ... }, items: V2Country[] }
-
-// Topics
-const topics = await client.topics().fetch()
-
-// Indicator catalogue (29k+ indicators)
-const indicators = await client.v2Indicators().fetch()
+// → { meta: { total }, items: [{ id, name, region, incomeLevel }] }
 ```
 
-## Error handling
-
-All HTTP errors throw `SDKRequestError` with a human-readable message and a suggestion:
+### Error handling
 
 ```ts
 import { SDKRequestError } from 'worldbank'
@@ -227,33 +197,31 @@ try {
 } catch (err) {
   if (err instanceof SDKRequestError) {
     console.log(err.sdkError.message)     // "HTTP 400 from GET /data360/data"
-    console.log(err.sdkError.suggestion)  // "Check your DATABASE_ID and filter parameters..."
-    console.log(err.sdkError.docsUrl)     // "https://data360api.worldbank.org/swagger/index.html"
+    console.log(err.sdkError.suggestion)  // "Check your DATABASE_ID..."
+    console.log(err.sdkError.docsUrl)
   }
 }
 ```
 
-## APIs
+## API endpoints
 
-| Client method | API | Endpoint |
-|---|---|---|
-| `.discover()` | Data360 | `POST /data360/searchv2` (facets) |
-| `.data()` | Data360 | `GET /data360/data` |
-| `.search()` | Data360 | `POST /data360/searchv2` |
-| `.indicators()` | Data360 | `GET /data360/indicators` |
-| `.disaggregation()` | Data360 | `GET /data360/disaggregation` |
-| `.metadata()` | Data360 | `POST /data360/metadata` |
-| `.countries()` | World Bank V2 | `GET /V2/country` |
-| `.v2Indicators()` | World Bank V2 | `GET /V2/indicator` |
-| `.topics()` | World Bank V2 | `GET /V2/topic` |
+| Method | Endpoint |
+|---|---|
+| `.discover()` | `POST /data360/searchv2` (facets) |
+| `.data()` | `GET /data360/data` |
+| `.search()` | `POST /data360/searchv2` |
+| `.indicators()` | `GET /data360/indicators` |
+| `.disaggregation()` | `GET /data360/disaggregation` |
+| `.metadata()` | `POST /data360/metadata` |
+| `.countries()` | `GET /V2/country` (World Bank V2) |
 
 Both APIs are public — no authentication required.
 
 ## Data attribution
 
-Data is sourced from the [World Bank Data360 API](https://data360api.worldbank.org) and the [World Bank V2 API](https://api.worldbank.org/V2). Use of this data is subject to the [World Bank Terms and Conditions](https://www.worldbank.org/en/about/legal/terms-and-conditions). The World Bank Group authorizes the use of this material subject to the terms and conditions on its website.
+Data sourced from the [World Bank Data360 API](https://data360api.worldbank.org) and [World Bank V2 API](https://api.worldbank.org/V2). Subject to [World Bank Terms of Use](https://www.worldbank.org/en/about/legal/terms-and-conditions).
 
-This SDK is an unofficial open-source wrapper and is not affiliated with or endorsed by the World Bank Group.
+This is an unofficial open-source wrapper, not affiliated with or endorsed by the World Bank Group.
 
 ## License
 
