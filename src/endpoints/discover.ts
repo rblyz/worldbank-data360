@@ -46,7 +46,7 @@ export async function discover(): Promise<DiscoverResult> {
   const raw = await postJSON<FacetResponse>(DATA360_BASE, '/data360/searchv2', {
     count: true,
     top: 0,
-    facets: ['series_description/database_id,count:100']
+    facets: ['series_description/database_id,count:200']
   })
 
   const facetValues = raw['@search.facets']?.['series_description/database_id'] ?? []
